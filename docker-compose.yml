@@ -16,3 +16,12 @@ services:
     volumes:
       - ./:/app
     command: python sync.py
+  web:
+    build: .
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./:/app
+    ports:
+      - "8080:8080"
+    command: uvicorn web:app --host 0.0.0.0 --port 8080

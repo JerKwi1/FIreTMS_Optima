@@ -11,6 +11,7 @@ Zawiera:
 - **mock serwery** (FastAPI) symulujące API fireTMS i Optimy do bezpiecznych testów
 - Dockerfile + docker-compose oraz unit pliki systemd
 - testowe dane
+- prosty interfejs webowy (`web.py`) z przyciskiem do ręcznego uruchomienia synchronizacji
 
 > **Uwaga:** Endpointy i modele w mockach są zgodne z przykładową strukturą z `mapper.py`. W produkcji podmień URL-e i ewentualnie dostosuj mapowanie.
 
@@ -26,7 +27,7 @@ Zawiera:
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn tests.mock_server:app --reload --port 8000  # w innym terminalu (mocki)
+uvicorn tests.mock_server:app --reload --host 0.0.0.0 --port 8000  # w innym terminalu (mocki)
 ```
 
 4. Uruchom synchronizację:
@@ -45,8 +46,9 @@ Powinieneś zobaczyć logi „pobrano 25 faktur” i „wysłano do Optimy…”
 docker compose up --build
 ```
 
-- `mock` uruchamia FastAPI pod `http://localhost:8000`
+- `mock` udostępnia testowe API na porcie `8000`
 - `sync` startuje kontener z integracją według `.env`
+- `web` udostępnia prosty interfejs na porcie `8080`
 
 ---
 
@@ -97,12 +99,25 @@ LOG_DIR=logs
 
 ---
 
+## Webowy interfejs
+
+Prosty panel WWW z przyciskiem do ręcznego uruchomienia synchronizacji:
+
+```bash
+uvicorn web:app --reload --host 0.0.0.0 --port 8080
+```
+
+Po starcie odwiedź `http://<host>:8080` (np. adres serwera) i kliknij **Run sync**.
+
+---
+
 ## Struktura projektu
 
 ```
 .
 ├── README.md
 ├── sync.py
+├── web.py
 ├── mapper.py
 ├── models.py
 ├── config.py
