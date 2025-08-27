@@ -3,6 +3,7 @@ import os, asyncio, json, time, hashlib, sqlite3
 from contextlib import closing
 from loguru import logger
 import aiohttp
+import aiomysql
 
 from config import settings
 from mapper import map_to_optima
@@ -65,22 +66,35 @@ class FireTMS:
         raise RuntimeError("FireTMS list_invoices failed")
 
 class Optima:
-    def __init__(self, session): self.s = session
+    def __init__(self, pool):
+        self.pool = pool
+
+    async def ensure_table(self):
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS optima_invoices (
+                        doc_no VARCHAR(255) PRIMARY KEY,
+                        data JSON NOT NULL
+                    )
+                    """
+                )
+                await conn.commit()
+
     async def upsert_invoice(self, doc):
-        headers={"Authorization": f"Bearer {settings.OPTIMA_TOKEN}", "Content-Type":"application/json"}
-        url = f"{settings.OPTIMA_URL}/invoices/upsert"
-        for attempt in range(settings.RETRIES):
-            try:
-                async with self.s.post(url, headers=headers, json=doc, timeout=settings.REQUEST_TIMEOUT) as r:
-                    if r.status in (429, 500, 502, 503, 504):
-                        logger.warning(f"Optima upsert status={r.status}, retry={attempt}")
-                        await backoff_sleep(attempt); continue
-                    r.raise_for_status()
-                    return await r.json()  # {externalId: "..."}
-            except Exception as e:
-                logger.warning(f"Optima upsert retry {attempt}: {e}")
-                await backoff_sleep(attempt)
-        raise RuntimeError("Optima upsert failed")
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(
+                    """
+                    INSERT INTO optima_invoices (doc_no, data)
+                    VALUES (%s, %s)
+                    ON DUPLICATE KEY UPDATE data=VALUES(data)
+                    """,
+                    (doc["docNo"], json.dumps(doc, ensure_ascii=False)),
+                )
+                await conn.commit()
+        return {"externalId": doc["docNo"]}
 
 async def process_invoice(sem, optima: Optima, inv: dict):
     async with sem:
@@ -106,19 +120,31 @@ async def run_sync():
     total = 0
     async with aiohttp.ClientSession() as session:
         ft = FireTMS(session)
-        op = Optima(session)
-
-        page = 1
-        while True:
-            batch = await ft.list_invoices(since, page=page, page_size=settings.BATCH_SIZE)
-            items = batch.get("items", [])
-            if not items:
-                break
-            await asyncio.gather(*(process_invoice(sem, op, inv) for inv in items))
-            total += len(items)
-            if not batch.get("nextPage"):
-                break
-            page += 1
+        pool = await aiomysql.create_pool(
+            host=settings.OPTIMA_DB_HOST,
+            port=settings.OPTIMA_DB_PORT,
+            user=settings.OPTIMA_DB_USER,
+            password=settings.OPTIMA_DB_PASSWORD,
+            db=settings.OPTIMA_DB_NAME,
+            autocommit=False,
+        )
+        op = Optima(pool)
+        await op.ensure_table()
+        try:
+            page = 1
+            while True:
+                batch = await ft.list_invoices(since, page=page, page_size=settings.BATCH_SIZE)
+                items = batch.get("items", [])
+                if not items:
+                    break
+                await asyncio.gather(*(process_invoice(sem, op, inv) for inv in items))
+                total += len(items)
+                if not batch.get("nextPage"):
+                    break
+                page += 1
+        finally:
+            pool.close()
+            await pool.wait_closed()
 
     set_state("since_ts", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
     logger.success(f"Sync finished. Total processed: {total}")
