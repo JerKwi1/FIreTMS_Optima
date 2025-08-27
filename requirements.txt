@@ -1,0 +1,7 @@
+
+aiohttp==3.9.5
+pydantic==2.7.4
+python-dotenv==1.0.1
+loguru==0.7.2
+fastapi==0.111.0
+uvicorn==0.30.1

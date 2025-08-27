@@ -1,0 +1,24 @@
+{
+  "id": "FTMS-0001",
+  "number": "FV/0001/2025",
+  "issueDate": "2025-08-01",
+  "currency": "PLN",
+  "buyer": {
+    "nip": "5250001009",
+    "name": "ACME Sp. z o.o.",
+    "address": "ul. Prosta 1, 00-000 Warszawa"
+  },
+  "positions": [
+    {
+      "name": "Usługa transportowa",
+      "quantity": 1,
+      "netPrice": 100.0,
+      "vatRate": "23"
+    }
+  ],
+  "totals": {
+    "net": 100.0,
+    "vat": 23.0,
+    "gross": 123.0
+  }
+}

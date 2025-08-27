@@ -1,0 +1,18 @@
+
+services:
+  mock:
+    build: .
+    command: uvicorn tests.mock_server:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+  sync:
+    build: .
+    depends_on:
+      - mock
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./:/app
+    command: python sync.py

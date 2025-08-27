@@ -1,0 +1,9 @@
+
+[Unit]
+Description=fireTMS -> Optima sync
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/firetms-optima-sync
+EnvironmentFile=/opt/firetms-optima-sync/.env
+ExecStart=/usr/bin/python3 /opt/firetms-optima-sync/sync.py
