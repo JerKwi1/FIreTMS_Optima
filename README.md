@@ -29,7 +29,7 @@ pip install -r requirements.txt
 uvicorn tests.mock_server:app --reload --port 8000  # w innym terminalu (mocki)
 ```
 
-4. Uruchom synchronizację:
+4. Uruchom synchronizację (skrypt będzie działał w pętli, sprawdzając nowe faktury co `POLL_INTERVAL` sekund):
 
 ```bash
 python sync.py
@@ -64,9 +64,8 @@ OPTIMA_DB_NAME=<nazwa-bazy>
 ```
 2. Zweryfikuj mapowanie w `mapper.py` (stawki VAT, waluty, pola kontrahenta).
 3. Zrób test na **firmie testowej** w Optimie.
-4. Ustaw harmonogram:
-   - **systemd timer** (patrz: `systemd/firetms-optima.service` i `.timer`) **lub**
-   - cron, albo uruchamianie w kontenerze (np. co 30 min przez `restart: unless-stopped` i `sleep`).
+4. Uruchom integrację jako usługę działającą w tle (np. `systemd` lub kontener Dockera);
+   skrypt sam sprawdza nowe faktury co `POLL_INTERVAL` sekund.
 
 ---
 
@@ -86,6 +85,7 @@ CONCURRENCY=10
 BATCH_SIZE=50
 REQUEST_TIMEOUT=30
 RETRIES=6
+POLL_INTERVAL=60
 
 # Znacznik czasu startu (ISO8601, UTC)
 SINCE_TS=2025-01-01T00:00:00Z

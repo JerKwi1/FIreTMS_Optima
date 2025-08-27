@@ -113,7 +113,7 @@ async def process_invoice(sem, optima: Optima, inv: dict):
             c.commit()
         logger.info(f"Synced invoice {inv['id']} -> externalId={ext_id}")
 
-async def run_sync():
+async def sync_once():
     init_db()
     since = get_state("since_ts", settings.SINCE_TS)
     sem = asyncio.Semaphore(settings.CONCURRENCY)
@@ -149,5 +149,13 @@ async def run_sync():
     set_state("since_ts", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
     logger.success(f"Sync finished. Total processed: {total}")
 
+async def run_forever():
+    while True:
+        try:
+            await sync_once()
+        except Exception as e:
+            logger.exception(f"Sync failed: {e}")
+        await asyncio.sleep(settings.POLL_INTERVAL)
+
 if __name__ == "__main__":
-    asyncio.run(run_sync())
+    asyncio.run(run_forever())

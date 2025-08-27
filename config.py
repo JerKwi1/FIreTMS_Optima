@@ -19,6 +19,7 @@ class Settings(BaseModel):
     REQUEST_TIMEOUT: int = int(os.getenv("REQUEST_TIMEOUT", "30"))
     RETRIES: int = int(os.getenv("RETRIES", "6"))
     SINCE_TS: str = os.getenv("SINCE_TS", "2025-01-01T00:00:00Z")
+    POLL_INTERVAL: int = int(os.getenv("POLL_INTERVAL", "60"))
 
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_DIR: str = os.getenv("LOG_DIR", "logs")
