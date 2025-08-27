@@ -52,12 +52,15 @@ docker compose up --build
 
 ## Przejście na produkcję
 
-1. W `.env` ustaw prawdziwe adresy i tokeny:
+1. W `.env` ustaw prawdziwe dane połączeń:
 ```
 FIRETMS_URL=https://<twoj-firetms-api>
 FIRETMS_TOKEN=...
-OPTIMA_URL=https://<twoje-optima-api>
-OPTIMA_TOKEN=...
+OPTIMA_DB_HOST=<host-bazy-optimy>
+OPTIMA_DB_PORT=3306
+OPTIMA_DB_USER=<uzytkownik>
+OPTIMA_DB_PASSWORD=<haslo>
+OPTIMA_DB_NAME=<nazwa-bazy>
 ```
 2. Zweryfikuj mapowanie w `mapper.py` (stawki VAT, waluty, pola kontrahenta).
 3. Zrób test na **firmie testowej** w Optimie.
@@ -72,8 +75,11 @@ OPTIMA_TOKEN=...
 ```
 FIRETMS_URL=http://localhost:8000/firetms
 FIRETMS_TOKEN=dev-firetms-token
-OPTIMA_URL=http://localhost:8000/optima
-OPTIMA_TOKEN=dev-optima-token
+OPTIMA_DB_HOST=localhost
+OPTIMA_DB_PORT=3306
+OPTIMA_DB_USER=root
+OPTIMA_DB_PASSWORD=
+OPTIMA_DB_NAME=optima
 
 # Wydajność i zachowanie
 CONCURRENCY=10
